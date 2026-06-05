@@ -5,29 +5,43 @@ Equivalente a los Scripts 4+5 (LSPGeneration + PhenologyFunctions).
 Salida: ráster 12 bandas → SOS, EOS, POS, LOS, customSOS, customEOS,
         vmin, vmax, n1, m1, n2, m2
 """
-import os, glob
+import os
+import glob
 import numpy as np
 from datetime import datetime
 from qgis.core import (
-    QgsProcessingAlgorithm, QgsProcessingParameterFile,
-    QgsProcessingParameterNumber, QgsProcessingParameterRasterDestination,
-    QgsProcessingParameterBoolean, QgsProcessingException,
+    QgsProcessingAlgorithm,
+    QgsProcessingParameterFile,
+    QgsProcessingParameterNumber,
+    QgsProcessingParameterRasterDestination,
+    QgsProcessingException,
 )
 from qgis.PyQt.QtCore import QCoreApplication
 
 
 class LSPGenerationAlgorithm(QgsProcessingAlgorithm):
 
-    INPUT_FOLDER  = 'INPUT_FOLDER'
-    CUSTOM_GAP    = 'CUSTOM_GAP'
-    OUTPUT        = 'OUTPUT'
+    INPUT_FOLDER = 'INPUT_FOLDER'
+    CUSTOM_GAP = 'CUSTOM_GAP'
+    OUTPUT = 'OUTPUT'
 
-    def tr(self, s): return QCoreApplication.translate('LSPGeneration', s)
-    def createInstance(self): return LSPGenerationAlgorithm()
-    def name(self): return 'lsp_generation'
-    def displayName(self): return self.tr('3. Generación de Métricas LSP (Fenología)')
-    def group(self): return self.tr('GEE GPR Phenology')
-    def groupId(self): return 'geegprpheno'
+    def tr(self, s):
+        return QCoreApplication.translate('LSPGeneration', s)
+
+    def createInstance(self):
+        return LSPGenerationAlgorithm()
+
+    def name(self):
+        return 'lsp_generation'
+
+    def displayName(self):
+        return self.tr('3. Generación de Métricas LSP (Fenología)')
+
+    def group(self):
+        return self.tr('GEE GPR Phenology')
+
+    def groupId(self):
+        return 'geegprpheno'
 
     def shortHelpString(self):
         return self.tr(
@@ -45,26 +59,41 @@ class LSPGenerationAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterFile(
             self.INPUT_FOLDER,
             self.tr('Carpeta con rásters gapfilled temporales (YYYY-MM-DD_*.tif)'),
-            behavior=QgsProcessingParameterFile.Folder))
+            behavior=QgsProcessingParameterFile.Folder
+        ))
         self.addParameter(QgsProcessingParameterNumber(
             self.CUSTOM_GAP,
             self.tr('Umbral relativo para SOS/EOS personalizado (0.0–1.0)'),
             type=QgsProcessingParameterNumber.Double,
-            defaultValue=0.30, minValue=0.0, maxValue=1.0))
+            defaultValue=0.30,
+            minValue=0.0,
+            maxValue=1.0
+        ))
         self.addParameter(QgsProcessingParameterRasterDestination(
-            self.OUTPUT, self.tr('Ráster de salida — métricas LSP (12 bandas)')))
+            self.OUTPUT,
+            self.tr('Ráster de salida — métricas LSP (12 bandas)')
+        ))
 
     def processAlgorithm(self, parameters, context, feedback):
-        import rasterio
+        try:
+            import rasterio
+        except ImportError:
+            raise QgsProcessingException(
+                'rasterio no está instalado.\n\n'
+                'Instálalo desde la Consola Python de QGIS con:\n\n'
+                'import subprocess, sys\n'
+                'subprocess.run([sys.executable, "-m", "pip", "install", "rasterio"])'
+            )
+
         from .gpr_algorithms import get_double_logistic_params, add_doy
 
-        folder      = self.parameterAsFile(parameters, self.INPUT_FOLDER, context)
-        custom_gap  = self.parameterAsDouble(parameters, self.CUSTOM_GAP, context)
+        folder = self.parameterAsFile(parameters, self.INPUT_FOLDER, context)
+        custom_gap = self.parameterAsDouble(parameters, self.CUSTOM_GAP, context)
         output_path = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
 
         tif_files = sorted(glob.glob(os.path.join(folder, '*.tif')))
         if not tif_files:
-            raise QgsProcessingException(f'No hay .tif en: {folder}')
+            raise QgsProcessingException(f'No hay archivos .tif en: {folder}')
 
         file_dates = {}
         for f in tif_files:
@@ -77,60 +106,118 @@ class LSPGenerationAlgorithm(QgsProcessingAlgorithm):
 
         if len(file_dates) < 6:
             raise QgsProcessingException(
-                f'Se necesitan ≥6 imágenes para ajustar la doble logística. Hay: {len(file_dates)}')
+                f'Se necesitan ≥6 imágenes para ajustar la doble logística.\n'
+                f'Archivos válidos encontrados: {len(file_dates)}'
+            )
 
-        feedback.pushInfo(f'Imágenes en serie temporal: {len(file_dates)}')
+        feedback.pushInfo(f'Imágenes válidas en serie temporal: {len(file_dates)}')
 
         first_f = list(file_dates.values())[0]
         with rasterio.open(first_f) as src:
-            meta   = src.meta.copy()
+            meta = src.meta.copy()
             n_rows, n_cols = src.height, src.width
             nodata = src.nodata if src.nodata is not None else -9999.0
-            n_pix  = n_rows * n_cols
 
-        doys_list, arrays_list = [], []
+        n_pix = n_rows * n_cols
+        feedback.pushInfo(f'Dimensiones: {n_rows} x {n_cols} = {n_pix} píxeles')
+
+        doys_list = []
+        arrays_list = []
+
+        feedback.pushInfo('Leyendo serie temporal...')
         for date_str, fpath in sorted(file_dates.items()):
+            if feedback.isCanceled():
+                return {}
+
             doy, _ = add_doy(date_str)
             doys_list.append(float(doy))
+
             with rasterio.open(fpath) as src:
                 arrays_list.append(src.read(1).astype(np.float32).flatten())
-            if feedback.isCanceled(): return {}
 
-        doys_arr   = np.array(doys_list)
+        doys_arr = np.array(doys_list)
         values_arr = np.stack(arrays_list, axis=0)
+        del arrays_list
 
-        feedback.setProgress(30)
-        feedback.pushInfo('Ajustando doble logística...')
+        feedback.setProgress(25)
 
-        valid = np.all(values_arr != nodata, axis=0) & np.all(np.isfinite(values_arr), axis=0)
-        feedback.pushInfo(f'Píxeles válidos: {valid.sum()} / {n_pix}')
+        valid = (
+            np.all(values_arr != nodata, axis=0) &
+            np.all(np.isfinite(values_arr), axis=0)
+        )
 
-        if not valid.any():
-            raise QgsProcessingException('No hay píxeles válidos en la serie temporal.')
+        n_valid = int(valid.sum())
+        feedback.pushInfo(f'Píxeles válidos: {n_valid} / {n_pix}')
 
-        lsp = get_double_logistic_params(doys_arr, values_arr[:, valid], custom_gap=custom_gap)
-        feedback.setProgress(80)
+        if n_valid == 0:
+            raise QgsProcessingException(
+                'No hay píxeles válidos en la serie temporal.\n'
+                'Verifica nodata, nombres de archivos y contenido de los rásters.'
+            )
 
-        band_names = ['sos','eos','pos','los','customsos','customeos',
-                      'vmin','vmax','n1','m1','n2','m2']
-        bands_out = []
-        for bname in band_names:
-            full = np.full(n_pix, nodata, dtype=np.float32)
-            full[valid] = lsp[bname]
-            bands_out.append(full.reshape(n_rows, n_cols))
+        feedback.pushInfo('Ajustando doble logística por bloques...')
+
+        band_names = [
+            'sos', 'eos', 'pos', 'los',
+            'customsos', 'customeos',
+            'vmin', 'vmax', 'n1', 'm1', 'n2', 'm2'
+        ]
+        bands_out = [np.full(n_pix, nodata, dtype=np.float32) for _ in band_names]
+
+        block_size = 5000
+        valid_idx = np.where(valid)[0]
+
+        for start in range(0, n_valid, block_size):
+            if feedback.isCanceled():
+                return {}
+
+            end = min(start + block_size, n_valid)
+            chunk = valid_idx[start:end]
+
+            try:
+                lsp = get_double_logistic_params(
+                    doys_arr,
+                    values_arr[:, chunk],
+                    custom_gap=custom_gap
+                )
+
+                for i, bname in enumerate(band_names):
+                    bands_out[i][chunk] = lsp[bname]
+
+            except Exception as ex:
+                feedback.pushWarning(f'Bloque {start}-{end} falló: {ex}')
+
+            feedback.setProgress(25 + int(65 * end / n_valid))
+
+        del values_arr
+
+        feedback.pushInfo('Escribiendo ráster de salida...')
 
         out_meta = meta.copy()
-        out_meta.update({'count': len(band_names), 'dtype': 'float32',
-                         'nodata': nodata, 'driver': 'GTiff'})
+        out_meta.update({
+            'count': len(band_names),
+            'dtype': 'float32',
+            'nodata': nodata,
+            'driver': 'GTiff',
+        })
+
         with rasterio.open(output_path, 'w', **out_meta) as dst:
             for i, (arr, bname) in enumerate(zip(bands_out, band_names)):
-                dst.write(arr, i + 1)
-                dst.update_tags(i + 1, NAME=bname.upper(),
-                                UNITS='DOY' if bname not in ('los','vmin','vmax') else 'days/index')
-            dst.update_tags(BAND_NAMES=','.join(b.upper() for b in band_names),
-                            CUSTOM_GAP=str(custom_gap))
+                dst.write(arr.reshape(n_rows, n_cols), i + 1)
+                dst.update_tags(
+                    i + 1,
+                    NAME=bname.upper(),
+                    UNITS='DOY' if bname not in ('los', 'vmin', 'vmax') else 'days/index'
+                )
+
+            dst.update_tags(
+                BAND_NAMES=','.join(b.upper() for b in band_names),
+                CUSTOM_GAP=str(custom_gap)
+            )
 
         feedback.setProgress(100)
-        feedback.pushInfo(f'✅ LSP guardado: {output_path}')
+        feedback.pushInfo(f'✅ LSP guardado en: {output_path}')
         feedback.pushInfo(f'Bandas: {", ".join(b.upper() for b in band_names)}')
+
         return {self.OUTPUT: output_path}
+    

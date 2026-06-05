@@ -117,14 +117,18 @@ class GPRSpectralPredictionAlgorithm(QgsProcessingAlgorithm):
             bands_data = np.stack(
                 [src.read(bi + 1).astype(np.float32) for bi in band_indices],
                 axis=-1)  # (rows, cols, 10)
-            cloud_mask = np.ones((n_rows, n_cols), dtype=bool)
+            valid_pixel = np.any(bands_data > 0, axis=-1)   # True donde hay dato real S2
+            cloud_mask  = valid_pixel.copy()                 # base: excluir nodata
             if apply_mask:
                 mask_layer = self.parameterAsRasterLayer(parameters, self.CLOUD_MASK, context)
                 if mask_layer:
                     with rasterio.open(mask_layer.source()) as msrc:
                         cloud_mask = msrc.read(1).astype(bool)
 
-        bands_scaled = bands_data / scale_factor  # → reflectividad [0,1]
+        bands_scaled = bands_data / scale_factor
+        bands_scaled = np.clip(bands_scaled, 0.0, 1.0)  # ← línea nueva
+        # Excluir también píxeles con reflectancia saturada (nubes brillantes)
+        cloud_mask &= np.all(bands_scaled < 1.0, axis=-1)
         n_pix        = n_rows * n_cols
         bands_flat   = bands_scaled.reshape(n_pix, 10)
         mask_flat    = cloud_mask.flatten()

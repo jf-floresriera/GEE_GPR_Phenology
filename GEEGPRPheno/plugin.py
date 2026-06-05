@@ -264,7 +264,6 @@ class GEEPanelDialog(QDialog):
         lay.setContentsMargins(20, 20, 20, 20)
         lay.setSpacing(14)
 
-        # Titulo
         tit = QLabel("GEE GPR Phenology Plugin")
         tf = QFont()
         tf.setPointSize(13)
@@ -281,7 +280,6 @@ class GEEPanelDialog(QDialog):
 
         lay.addWidget(self._sep())
 
-        # Descripcion
         lay.addWidget(self._section_title("Descripcion"))
         desc = QLabel(
             "Plugin de QGIS para la estimacion de variables biofisicas y "
@@ -301,7 +299,6 @@ class GEEPanelDialog(QDialog):
 
         lay.addWidget(self._sep())
 
-        # Desarrollador
         lay.addWidget(self._section_title("Desarrollador"))
 
         dev_frame = QFrame()
@@ -333,16 +330,11 @@ class GEEPanelDialog(QDialog):
 
         dv.addLayout(row('👤', '<b>Jesus Enrique Flores Riera</b>'))
         dv.addLayout(row('🏛', 'Laboratorio 227 — Universidad Nacional de Colombia'))
-        dv.addLayout(
-            row('✉', 'jfloresr@unal.edu.co', 'mailto:jfloresr@unal.edu.co')
-        )
-        dv.addLayout(
-            row('🔗', 'linkedin.com/in/flores-riera',
-                'https://www.linkedin.com/in/flores-riera/')
-        )
+        dv.addLayout(row('✉', 'jfloresr@unal.edu.co', 'mailto:jfloresr@unal.edu.co'))
+        dv.addLayout(row('🔗', 'linkedin.com/in/flores-riera',
+                         'https://www.linkedin.com/in/flores-riera/'))
         lay.addWidget(dev_frame)
 
-        # Botones de contacto
         btn_row = QHBoxLayout()
         btn_row.setSpacing(8)
 
@@ -354,9 +346,7 @@ class GEEPanelDialog(QDialog):
             "QPushButton:hover { background: #005f8e; }"
         )
         btn_li.clicked.connect(
-            lambda: QDesktopServices.openUrl(
-                QUrl('https://www.linkedin.com/in/flores-riera/')
-            )
+            lambda: QDesktopServices.openUrl(QUrl('https://www.linkedin.com/in/flores-riera/'))
         )
         btn_row.addWidget(btn_li)
 
@@ -368,16 +358,13 @@ class GEEPanelDialog(QDialog):
             "QPushButton:hover { background: #2e5c10; }"
         )
         btn_em.clicked.connect(
-            lambda: QDesktopServices.openUrl(
-                QUrl('mailto:jfloresr@unal.edu.co')
-            )
+            lambda: QDesktopServices.openUrl(QUrl('mailto:jfloresr@unal.edu.co'))
         )
         btn_row.addWidget(btn_em)
         lay.addLayout(btn_row)
 
         lay.addWidget(self._sep())
 
-        # Algoritmos
         lay.addWidget(self._section_title("Algoritmos incluidos"))
 
         for ico_char, name, desc_txt, color in [
@@ -414,9 +401,7 @@ class GEEPanelDialog(QDialog):
             an.setFont(anf)
             an.setStyleSheet(f"background: transparent; color: {color};")
             ad = QLabel(desc_txt)
-            ad.setStyleSheet(
-                "background: transparent; color: #7a7974; font-size: 10px;"
-            )
+            ad.setStyleSheet("background: transparent; color: #7a7974; font-size: 10px;")
             at.addWidget(an)
             at.addWidget(ad)
             al.addLayout(at, 1)
@@ -424,7 +409,6 @@ class GEEPanelDialog(QDialog):
 
         lay.addWidget(self._sep())
 
-        # Dependencias
         lay.addWidget(self._section_title("Dependencias"))
         deps = QLabel(
             "numpy >= 1.21    scipy >= 1.7    rasterio >= 1.3\n"
@@ -488,19 +472,22 @@ class GEEPanelDialog(QDialog):
             dlg.show()
             dlg.exec_()
         except Exception as ex:
-            QMessageBox.critical(self, "GEEGPRPheno",
-                                 f"Error al abrir algoritmo:\n{ex}")
+            QMessageBox.critical(self, "GEEGPRPheno", f"Error al abrir algoritmo:\n{ex}")
 
     # =========================================================================
-    # GEE
+    # GEE — VERIFICACION
     # =========================================================================
 
     def _check_gee_status(self, silent=False):
         try:
             import ee
-            ee.Initialize()
+            project = self._load_gee_project()
+            if project:
+                ee.Initialize(project=project)
+            else:
+                ee.Initialize()
             self.gee_btn.setText("GEE OK")
-            self.gee_btn.setToolTip("GEE conectado")
+            self.gee_btn.setToolTip("GEE conectado correctamente")
             self.gee_btn.setStyleSheet(
                 "QPushButton { background: rgba(67,122,34,0.75); color: white; "
                 "border: 1px solid rgba(255,255,255,0.4); border-radius: 5px; "
@@ -513,7 +500,7 @@ class GEEPanelDialog(QDialog):
                     "Google Earth Engine conectado correctamente.\n"
                     "El Pipeline Automatico esta listo."
                 )
-        except Exception:
+        except Exception as ex:
             self.gee_btn.setText("Sin GEE")
             self.gee_btn.setToolTip("Sin conexion GEE - clic para autenticar")
             self.gee_btn.setStyleSheet(
@@ -532,13 +519,42 @@ class GEEPanelDialog(QDialog):
                 if reply == QMessageBox.Yes:
                     self._authenticate_gee()
 
+    # =========================================================================
+    # GEE — GUARDAR / CARGAR PROJECT ID
+    # =========================================================================
+
+    def _gee_config_path(self):
+        config_dir = os.path.expanduser('~/.config/earthengine')
+        os.makedirs(config_dir, exist_ok=True)
+        return os.path.join(config_dir, 'qgis_plugin_config.json')
+
+    def _save_gee_project(self, project_id):
+        import json
+        with open(self._gee_config_path(), 'w') as f:
+            json.dump({'project': project_id}, f)
+
+    def _load_gee_project(self):
+        import json
+        path = self._gee_config_path()
+        if os.path.exists(path):
+            try:
+                with open(path) as f:
+                    return json.load(f).get('project', '')
+            except Exception:
+                pass
+        return ''
+
+    # =========================================================================
+    # GEE — AUTENTICACION (flujo moderno ee.Authenticate)
+    # =========================================================================
+
     def _authenticate_gee(self):
         try:
             import ee
         except ImportError:
             QMessageBox.critical(
                 self, "GEEGPRPheno",
-                "earthengine-api no instalado.\n"
+                "earthengine-api no instalado.\n\n"
                 "Abre la Consola Python de QGIS y ejecuta:\n\n"
                 "  import subprocess, sys\n"
                 "  subprocess.run([sys.executable, '-m', 'pip',\n"
@@ -546,97 +562,101 @@ class GEEPanelDialog(QDialog):
             )
             return
 
+        # Pedir el Project ID si no esta guardado
+        project = self._load_gee_project()
+        if not project:
+            project, ok = QInputDialog.getText(
+                self,
+                "ID de proyecto Google Cloud / GEE",
+                "Ingresa tu Project ID de Google Cloud:\n\n"
+                "Lo encuentras en: console.cloud.google.com\n"
+                "(parte superior, junto al nombre del proyecto)\n\n"
+                "Ejemplo:  ee-miusuario   o   my-gee-project-123",
+                QLineEdit.Normal,
+                ""
+            )
+            if not ok or not project.strip():
+                QMessageBox.warning(
+                    self, "GEEGPRPheno",
+                    "Se necesita el Project ID para usar GEE.\n\n"
+                    "Si no tienes un proyecto, crealo en:\n"
+                    "  https://console.cloud.google.com\n"
+                    "y activa la API de Earth Engine."
+                )
+                return
+            project = project.strip()
+            self._save_gee_project(project)
+
+        # Verificar si ya hay credenciales validas
         try:
-            ee.Initialize()
+            ee.Initialize(project=project)
             self._check_gee_status(silent=True)
             QMessageBox.information(
                 self, "Ya autenticado",
-                "Ya tienes credenciales validas de Google Earth Engine."
+                f"Ya tienes credenciales validas.\n\n"
+                f"Proyecto: {project}\n\n"
+                "El indicador GEE OK aparece en el panel."
             )
             return
         except Exception:
             pass
 
-        QMessageBox.information(
-            self, "Autenticacion GEE",
-            "Se abrira tu navegador para autenticar con GEE.\n\n"
-            "1. Inicia sesion con tu cuenta Google\n"
-            "2. Acepta los permisos solicitados\n"
-            "3. Copia el codigo que aparece\n"
-            "4. Pegalo en el siguiente campo\n\n"
-            "Presiona OK para abrir el navegador."
+        # Informar al usuario
+        reply = QMessageBox.question(
+            self, "Autenticacion Google Earth Engine",
+            "Se abrira tu navegador para autenticarte con Google Earth Engine.\n\n"
+            "El proceso es automatico:\n"
+            "  1. Se abre el navegador con tu cuenta Google\n"
+            "  2. Aceptas los permisos de Earth Engine\n"
+            "  3. Las credenciales se guardan automaticamente\n\n"
+            f"Proyecto GEE: {project}\n\n"
+            "Deseas continuar?",
+            QMessageBox.Yes | QMessageBox.No
         )
+        if reply != QMessageBox.Yes:
+            return
 
+        # Intentar autenticacion — flujo localhost (moderno)
         try:
-            import webbrowser, json, urllib.parse, urllib.request
-
-            CLIENT_ID = (
-                '517222506229-vsmmajv00ul0bs7p89v5m89qs8eb9359'
-                '.apps.googleusercontent.com'
-            )
-            auth_url = (
-                'https://accounts.google.com/o/oauth2/auth'
-                '?client_id=' + CLIENT_ID +
-                '&redirect_uri=urn%3Aietf%3Awg%3Aoauth%3A2.0%3Aoob'
-                '&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fearthengine'
-                '+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform'
-                '+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdevstorage.full_control'
-                '&response_type=code&access_type=offline'
-            )
-            webbrowser.open(auth_url)
-
-            code, ok = QInputDialog.getText(
-                self, "Codigo de autorizacion GEE",
-                "Pega aqui el codigo del navegador:",
-                QLineEdit.Normal, ""
-            )
-            if not ok or not code.strip():
-                return
-
-            data = urllib.parse.urlencode({
-                'code':          code.strip(),
-                'client_id':     CLIENT_ID,
-                'client_secret': 'notasecret',
-                'redirect_uri':  'urn:ietf:wg:oauth:2.0:oob',
-                'grant_type':    'authorization_code',
-            }).encode()
-
-            req = urllib.request.Request(
-                'https://oauth2.googleapis.com/token', data=data, method='POST'
-            )
-            req.add_header('Content-Type', 'application/x-www-form-urlencoded')
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                token = json.loads(resp.read().decode())
-
-            refresh = token.get('refresh_token', '')
-            if not refresh:
-                raise ValueError('No se recibio refresh_token.')
-
-            creds_dir = os.path.expanduser('~/.config/earthengine')
-            os.makedirs(creds_dir, exist_ok=True)
-            with open(os.path.join(creds_dir, 'credentials'), 'w') as f:
-                json.dump({
-                    'client_id': CLIENT_ID, 'client_secret': 'notasecret',
-                    'refresh_token': refresh, 'type': 'authorized_user',
-                    'token_uri': 'https://oauth2.googleapis.com/token',
-                }, f, indent=2)
-
-            ee.Initialize()
+            ee.Authenticate(auth_mode='localhost', quiet=False)
+            ee.Initialize(project=project)
             self._check_gee_status(silent=True)
             QMessageBox.information(
                 self, "Autenticacion exitosa",
-                "Google Earth Engine autenticado correctamente.\n"
+                f"Google Earth Engine autenticado correctamente.\n\n"
+                f"Proyecto: {project}\n\n"
+                "Las credenciales se guardaron en:\n"
+                "  ~/.config/earthengine/credentials\n\n"
                 "No necesitaras autenticarte de nuevo en este equipo."
             )
-        except Exception as ex:
+            return
+        except Exception:
+            pass
+
+        # Fallback: flujo notebook
+        try:
+            ee.Authenticate(auth_mode='notebook', quiet=False)
+            ee.Initialize(project=project)
+            self._check_gee_status(silent=True)
+            QMessageBox.information(
+                self, "Autenticacion exitosa",
+                f"Google Earth Engine autenticado.\nProyecto: {project}"
+            )
+            return
+        except Exception as ex2:
             QMessageBox.critical(
                 self, "Error de autenticacion",
-                f"No se pudo autenticar:\n\n{ex}\n\n"
-                "Alternativa desde Consola Python de QGIS:\n"
-                "  import ee\n"
-                "  ee.Authenticate(auth_mode='notebook')"
+                f"No se pudo autenticar.\n\n"
+                f"Error: {ex2}\n\n"
+                "── Solucion manual ──────────────────────\n"
+                "Abre la Consola Python de QGIS y ejecuta:\n\n"
+                f"  import ee\n"
+                f"  ee.Authenticate()\n"
+                f"  ee.Initialize(project='{project}')\n\n"
+                "O desde terminal:\n\n"
+                f"  earthengine authenticate\n"
+                f"  earthengine set_project {project}"
             )
-
 
 # =============================================================================
 # CLASE PRINCIPAL DEL PLUGIN
@@ -645,7 +665,7 @@ class GEEPanelDialog(QDialog):
 class GEEGPRPhenoPlugin:
 
     def __init__(self, iface):
-        self.iface   = iface
+        self.iface    = iface
         self.provider = None
         self.actions  = []
         self.menu_name = "GEE GPR Phenology"
@@ -714,7 +734,7 @@ class GEEGPRPhenoPlugin:
 
     def _open_help(self):
         QDesktopServices.openUrl(
-            QUrl('https://github.com/msalinero/GEEGPRPhenoDemos')
+            QUrl('https://github.com/jf-floresriera/GEE_GPR_Phenology')
         )
 
     def unload(self):
@@ -730,3 +750,4 @@ class GEEGPRPhenoPlugin:
         if self.toolbar:
             del self.toolbar
             self.toolbar = None
+            

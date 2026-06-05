@@ -49,9 +49,9 @@ def gpr_spectral_prediction(bands_array, model):
     kstar     = np.exp(0.5 * (PtTDX - xdx_vec[:, None]))  # (n_train, n_pix)
 
     pred = (alpha @ kstar) * arg1 + meanmodel
-    pred = np.where(pred < 0, 1e-5, pred)
+    pred = np.where(pred < 0,   1e-5, pred)
+    pred = np.where(pred > 10.0, 10.0, pred)  # LAI físicamente no supera 8-10
     return pred.astype(np.float32)
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SCRIPT 2 — Relleno temporal GPR con kernel RBF sobre tiempo
