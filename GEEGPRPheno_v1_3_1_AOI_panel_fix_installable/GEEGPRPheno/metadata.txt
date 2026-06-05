@@ -1,0 +1,16 @@
+[general]
+name=GEE GPR Phenology
+qgisMinimumVersion=3.16
+description=Plugin para estimación de variables biofísicas vegetales con GPR y generación de métricas fenológicas LSP desde imágenes Sentinel-2 BOA. Basado en GEEGPRPhenoDemos de M. Salinero (msalinero85).
+version=1.3.1
+author=Adaptado para QGIS por Jesus Enrique Flores Riera
+email=jesus.flores@unal.edu.co
+about=Implementa el pipeline completo: predicción GPR espectral pixel a pixel, gapfilling temporal con kernel RBF, ajuste de doble logística y generación de métricas LSP (SOS, EOS, POS, LOS) para series Sentinel-2. Desde v1.3.1 no instala dependencias al arrancar, añade instalador manual multiplataforma, AOI dibujada en mapa, máscara Sentinel-2 robusta sin dependencia estricta de QA60 y corrige el botón interno de dibujo AOI del panel.
+tracker=https://github.com/jf-floresriera/GEE_GPR_Phenology
+repository=https://github.com/jf-floresriera/GEE_GPR_Phenology
+hasProcessingProvider=yes
+tags=remote sensing,sentinel-2,GPR,phenology,biophysical,LAI,vegetation,time series,gapfilling
+category=Raster
+icon=icon.png
+experimental=False
+deprecated=False
