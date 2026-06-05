@@ -1,0 +1,37 @@
+GEEGPRPheno v1.2.1 — instalación segura de dependencias en Windows/QGIS
+=======================================================================
+
+Problema corregido
+------------------
+La versión anterior intentaba instalar earthengine-api automáticamente al cargar el plugin.
+En Windows/QGIS esto puede generar un ciclo de carga/reinicio donde QGIS pregunta una y otra
+vez por la misma dependencia y el plugin no termina de abrir.
+
+Esta versión v1.2.1 NO instala paquetes automáticamente al arrancar QGIS.
+
+Pasos recomendados
+------------------
+1. Cierre QGIS completamente.
+2. Abra "OSGeo4W Shell" desde el menú Inicio de Windows.
+3. Ejecute:
+
+   python -m pip install --upgrade pip
+   python -m pip install earthengine-api rasterio
+
+4. Abra QGIS nuevamente.
+5. Instale el plugin desde el archivo ZIP.
+6. En QGIS use:
+
+   Plugins > GEE GPR Phenology > Diagnosticar dependencias Python
+
+7. Para usar Google Earth Engine:
+
+   Plugins > GEE GPR Phenology > Autenticar Google Earth Engine
+
+Uso sin GEE
+-----------
+El algoritmo "Pipeline GEE Automático" puede usarse con:
+
+   Fuente de datos Sentinel-2 BOA = Carpeta local S2 BOA
+
+En ese modo no requiere earthengine-api. Solo necesita imágenes Sentinel-2 L2A/BOA en GeoTIFF.
