@@ -1,402 +1,624 @@
-# 🛰 GEE GPR Phenology — QGIS Plugin
+# 🛰️ GEE GPR Phenology for QGIS
 
 <div align="center">
 
-![QGIS](https://img.shields.io/badge/QGIS-3.x-green?logo=qgis&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3.8%2B-blue?logo=python&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-yellow)
-![Status](https://img.shields.io/badge/Status-Active-brightgreen)
+<img src="GEEGPRPheno/icon.png" alt="GEE GPR Phenology icon" width="120"/>
 
-**Plugin de QGIS para estimación de variables biofísicas y fenología de cultivos**  
-**a partir de imágenes Sentinel-2 usando Regresión por Procesos Gaussianos (GPR)**
+# GEE GPR Phenology
 
-[📦 Instalación](#-instalación) · [🚀 Uso rápido](#-uso-rápido) · [📐 Algoritmos](#-algoritmos) · [🌍 Pipeline GEE](#-pipeline-gee-automático) · [📬 Contacto](#-contacto)
+**A QGIS plugin for Sentinel-2 biophysical retrieval, temporal gapfilling, and land surface phenology (LSP) analysis**
+
+[![QGIS](https://img.shields.io/badge/QGIS-3.40%2B-589632?logo=qgis&logoColor=white)](https://qgis.org/)
+[![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white)](https://www.python.org/)
+[![Sentinel-2](https://img.shields.io/badge/Sentinel--2-L2A%20%2F%20BOA-orange)](https://dataspace.copernicus.eu/)
+[![Google Earth Engine](https://img.shields.io/badge/Google%20Earth%20Engine-supported-34A853?logo=googleearth&logoColor=white)](https://earthengine.google.com/)
+[![Status](https://img.shields.io/badge/status-stable-success)](#)
+[![Version](https://img.shields.io/badge/version-v1.5.2-informational)](#-version-history)
+[![License](https://img.shields.io/badge/license-MIT-yellow)](#-license)
+
+**Developed and adapted for QGIS from the original Google Earth Engine methodology by Salinero-Delgado et al.**
+
+[🚀 Quick start](#-quick-start) •
+[🧠 Features](#-main-features) •
+[🧪 Algorithms](#-algorithms) •
+[🗂️ Repository structure](#️-repository-structure) •
+[📦 Installation](#-installation) •
+[📄 Citation](#-citation)
 
 </div>
 
 ---
 
-## 📋 Descripción
+## ✨ What is this plugin?
 
-**GEE GPR Phenology** es un plugin de QGIS que implementa en Python/NumPy la metodología GPR del repositorio [GEEGPRPhenoDemos](https://github.com/msalinero/GEEGPRPhenoDemos) (Salinero-Delgado et al.), adaptándola para trabajar directamente en el entorno de escritorio QGIS con imágenes locales **y** con descarga automatizada desde **Google Earth Engine (GEE)**.
+**GEE GPR Phenology** is a **QGIS desktop plugin** that brings a complete remote sensing workflow into a GIS-friendly environment. It estimates crop biophysical variables from **Sentinel-2 BOA/L2A** imagery using **Gaussian Process Regression (GPR)**, performs **temporal gapfilling**, derives **Land Surface Phenology (LSP)** metrics, and supports both:
 
-### ¿Qué hace este plugin?
+- **direct downloads from Google Earth Engine (GEE)**, and
+- **local Sentinel-2 BOA GeoTIFF workflows**.
 
-Dado un stack de imágenes Sentinel-2 BOA (10 bandas: B2, B3, B4, B5, B6, B7, B8, B8A, B11, B12), el plugin:
-
-1. **Estima variables biofísicas** pixel a pixel mediante modelos GPR pre-entrenados
-2. **Rellena lagunas temporales** en la serie causadas por cobertura nubosa (Gapfilling GPR)
-3. **Extrae métricas fenológicas** (SOS, EOS, POS, LOS, etc.) ajustando una doble logística
-4. **Automatiza todo el flujo** descargando imágenes directamente desde Google Earth Engine
-
-### Variables biofísicas soportadas
-
-| Variable | Descripción | Unidades |
-|----------|-------------|---------|
-| **LAI** | Leaf Area Index | m²/m² |
-| **Cab** | Contenido de clorofila foliar | µg/cm² |
-| **Cw** | Contenido de agua foliar | cm |
-| **Cm** | Materia seca foliar | g/cm² |
-| **FVC** | Fracción de Cobertura Vegetal | — |
-| **laiCab** | LAI × Cab | g/m² |
-| **laiCm** | LAI × Cm | g/m² |
-| **laiCw** | LAI × Cw | g/m² |
+The plugin was progressively improved to become a more robust, user-friendly, multilingual, and visually richer QGIS tool while preserving the mathematical foundations of the original JavaScript workflow.
 
 ---
 
-## 🗂 Estructura del repositorio
+## 🎬 README preview media
 
+> This README is prepared so that it looks great on GitHub **as soon as you add your media files**.  
+> Put your screenshots/GIFs under `docs/media/` using the names below and GitHub will render them automatically.
+
+### Recommended media files
+
+```text
+docs/media/hero-plugin.gif
+docs/media/panel-overview.png
+docs/media/draw-aoi.gif
+docs/media/pipeline-workflow.png
+docs/media/qgis-layers-view.png
+docs/media/lsp-report-preview.png
+docs/media/pdf-timeseries-preview.png
 ```
-GEEGPRPheno/
-├── __init__.py                  # Entrada del plugin QGIS
-├── plugin.py                    # Interfaz principal (QDialog con pestañas)
-├── processing_provider.py       # Proveedor de algoritmos QGIS Processing
-│
-├── algo_spectral_prediction.py  # Algoritmo 1: Predicción Espectral GPR
-├── algo_gapfilling.py           # Algoritmo 2: Gapfilling Temporal GPR
-├── algo_lsp.py                  # Algoritmo 3: Métricas LSP (Fenología)
-├── algo_gee_pipeline.py         # Algoritmo 4: Pipeline GEE Automático
-│
-├── gpr_algorithms.py            # Núcleo matemático GPR (NumPy puro)
-├── s2boa_models.py              # Modelos GPR pre-entrenados (hiperparámetros)
-├── installer.py                 # Instalador automático de dependencias
-│
-├── icon.png                     # Icono del plugin
-├── icon.svg                     # Icono vectorial
-├── metadata.txt                 # Metadatos QGIS Plugin Manager
-└── requirements.txt             # Dependencias Python
+
+### Hero animation
+
+<div align="center">
+  <img src="docs/media/hero-plugin.gif" alt="Plugin animated preview" width="92%"/>
+</div>
+
+### Visual gallery
+
+| Plugin panel | QGIS loaded layers |
+|---|---|
+| <img src="docs/media/panel-overview.png" alt="Plugin panel" width="100%"/> | <img src="docs/media/qgis-layers-view.png" alt="QGIS layers" width="100%"/> |
+
+| AOI drawing tool | PDF report preview |
+|---|---|
+| <img src="docs/media/draw-aoi.gif" alt="AOI drawing" width="100%"/> | <img src="docs/media/pdf-timeseries-preview.png" alt="PDF report" width="100%"/> |
+
+---
+
+## 🌿 Main features
+
+### Core scientific workflow
+
+- **Spectral GPR prediction** from Sentinel-2 BOA/L2A reflectance
+- **Temporal GPR gapfilling** for cloudy or missing observations
+- **LSP extraction** using double logistic fitting
+- **Automatic end-to-end pipeline** from AOI to final phenological metrics
+
+### Data input options
+
+- **Google Earth Engine** download workflow
+- **Local Sentinel-2 BOA GeoTIFF folder** workflow
+- AOI from **existing vector layer** or **interactive polygon drawing tool** in QGIS
+
+### Visual and usability improvements
+
+- automatic loading of raster outputs into QGIS
+- grouped layers in the layer tree:
+  - `Raw`
+  - `GPR pred`
+  - `Gapfilled`
+  - `LSP`
+- automatic symbology using palettes adapted from the **original JavaScript files**
+- generation of **PDF reports** and **CSV summaries**
+- multilingual interface:
+  - **English** (default)
+  - **Español**
+  - **Português**
+
+### Robustness improvements introduced during development
+
+- safe dependency handling
+- safer GEE authentication workflow
+- support for switching GEE projects
+- non-invasive plugin startup behavior
+- fixed QA60/SCL cloud mask logic
+- corrected GPR equations to match original `.js`
+- fixed LSP raster stacking issues caused by inconsistent dimensions
+- deduplication of dates and cleanup of old temporary outputs
+
+---
+
+## 🧠 Supported biophysical variables
+
+| Variable | Description | Typical units |
+|---|---|---|
+| `LAI` | Leaf Area Index | m²/m² |
+| `Cab` | Leaf chlorophyll content | µg/cm² |
+| `Cw` | Leaf water content | cm |
+| `Cm` | Leaf dry matter content | g/cm² |
+| `FVC` | Fractional Vegetation Cover | unitless |
+| `laiCab` | LAI × Cab | g/m² |
+| `laiCm` | LAI × Cm | g/m² |
+| `laiCw` | LAI × Cw | g/m² |
+
+---
+
+## 🧪 Algorithms
+
+The plugin exposes four main algorithms through the QGIS Processing framework.
+
+### 1) Spectral prediction GPR
+
+**Purpose:** estimate biophysical variables pixel by pixel from Sentinel-2 BOA spectral data.
+
+**Main file:** `algo_spectral_prediction.py`
+
+**Inputs:**
+- Sentinel-2 raster stack
+- biophysical target variable
+- scale factor
+- optional valid mask
+
+**Output:**
+- a single-band GeoTIFF with the estimated variable
+
+---
+
+### 2) Temporal gapfilling GPR
+
+**Purpose:** fill temporal gaps in the time series caused by cloud cover or missing observations.
+
+**Main file:** `algo_gapfilling.py`
+
+**Inputs:**
+- folder of per-date prediction rasters
+- target date / time window
+- crop type
+- variable
+
+**Output:**
+- gapfilled raster(s)
+
+---
+
+### 3) LSP metrics generation
+
+**Purpose:** derive phenological metrics by fitting a double logistic function over the gapfilled time series.
+
+**Main file:** `algo_lsp.py`
+
+**Typical LSP outputs:**
+- `SOS` — Start of Season
+- `EOS` — End of Season
+- `POS` — Peak of Season
+- `LOS` — Length of Season
+- `CustomSOS`
+- `CustomEOS`
+- `Vmin`
+- `Vmax`
+- `n1`, `m1`, `n2`, `m2`
+
+**Output:**
+- multiband GeoTIFF with 12 LSP metrics
+
+---
+
+### 4) Automatic GEE pipeline
+
+**Purpose:** run the complete workflow automatically:
+
+```text
+AOI → Sentinel-2 filtering/download → Spectral GPR → Temporal gapfilling → LSP → QGIS visualization + PDF/CSV reports
+```
+
+**Main file:** `algo_gee_pipeline.py`
+
+This is the most user-friendly entry point for the plugin.
+
+---
+
+## 📐 Scientific and technical basis
+
+This plugin is based on the original **Google Earth Engine JavaScript** workflow and was adapted to QGIS/Python while preserving the core mathematical methodology.
+
+### Spectral GPR
+
+A Gaussian Process Regression model is applied to the reflectance vector:
+
+```math
+k(x, x') = \sigma^2 \exp\left(-\frac{1}{2}\sum_i \frac{(x_i-x_i')^2}{\ell_i^2}\right)
+```
+
+The prediction is computed from the kernel vector and the pre-trained coefficients of the model.
+
+### Temporal GPR gapfilling
+
+A temporal kernel is used to interpolate missing observations:
+
+```math
+K(t_i, t_j) = \sigma_f^2 \exp\left(-\frac{(t_i-t_j)^2}{2\ell_{ts}^2}\right)
+```
+
+### Double logistic phenology
+
+A double logistic function is fitted to estimate seasonal transitions and derive LSP metrics.
+
+---
+
+## 🗂️ Repository structure
+
+```text
+GEE_GPR_Phenology/
+├── GEEGPRPheno/
+│   ├── __init__.py
+│   ├── plugin.py
+│   ├── processing_provider.py
+│   ├── algo_spectral_prediction.py
+│   ├── algo_gapfilling.py
+│   ├── algo_lsp.py
+│   ├── algo_gee_pipeline.py
+│   ├── gpr_algorithms.py
+│   ├── s2boa_models.py
+│   ├── gee_palettes.py
+│   ├── qgis_utils.py
+│   ├── installer.py
+│   ├── i18n.py
+│   ├── requirements.txt
+│   ├── metadata.txt
+│   ├── icon.png
+│   └── icon.svg
+├── docs/
+│   └── media/
+│       ├── hero-plugin.gif
+│       ├── panel-overview.png
+│       ├── draw-aoi.gif
+│       ├── pipeline-workflow.png
+│       ├── qgis-layers-view.png
+│       ├── lsp-report-preview.png
+│       └── pdf-timeseries-preview.png
+├── README.md
+├── LICENSE
+└── CHANGELOG.md
 ```
 
 ---
 
-## 📦 Instalación
+## 🌍 Workflow overview
 
-### Opción 1 — Desde QGIS Plugin Manager (recomendado)
+<div align="center">
+  <img src="docs/media/pipeline-workflow.png" alt="Workflow overview" width="88%"/>
+</div>
 
-> *Próximamente disponible en el repositorio oficial de plugins QGIS*
+### End-to-end workflow
 
-### Opción 2 — Instalación manual
-
-1. Descarga o clona este repositorio:
-   ```bash
-   git clone https://github.com/jf-floresriera/GEE_GPR_Phenology.git
-   ```
-
-2. Copia la carpeta `GEEGPRPheno` al directorio de plugins de QGIS:
-
-   | Sistema | Ruta |
-   |---------|------|
-   | **Windows** | `C:\Users\<usuario>\AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins\` |
-   | **Linux** | `~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/` |
-   | **macOS** | `~/Library/Application Support/QGIS/QGIS3/profiles/default/python/plugins/` |
-
-3. En QGIS: **Complementos → Administrar e instalar complementos → Instalados** → activa `GEE GPR Phenology`
-
-4. El instalador automático instalará las dependencias Python al activar el plugin por primera vez.
-
-### Dependencias Python
-
-```
-numpy >= 1.21.0
-scipy >= 1.7.0
-rasterio >= 1.3.0
-earthengine-api >= 0.1.370   # Solo requerido para el Algoritmo 4 (Pipeline GEE)
-```
+1. Define or draw an **AOI** in QGIS.
+2. Choose the **data source**:
+   - Google Earth Engine, or
+   - local Sentinel-2 BOA folder.
+3. Select the **biophysical variable** and **crop type**.
+4. Run **spectral GPR**.
+5. Run **temporal gapfilling**.
+6. Optionally compute **LSP metrics**.
+7. Load outputs automatically into QGIS.
+8. Export **PDF reports** and **CSV summaries**.
 
 ---
 
-## 🚀 Uso rápido
+## 🗃️ Output folders
 
-Al activar el plugin aparece un **panel flotante** con 5 pestañas:
+A typical automatic pipeline run generates:
 
+```text
+output_folder/
+├── 01_S2_raw/
+├── 02_<variable>_pred/
+├── 03_<variable>_gapfilled/
+├── 04_<variable>_LSP/
+└── 05_reportes_pdf/
+    ├── reporte_resumen_<variable>.pdf
+    ├── atlas_LSP_<variable>.pdf
+    └── resumen_series_<variable>.csv
 ```
-🌿 Espectral  |  🔁 Gapfilling  |  📈 LSP  |  🛰 GEE Auto  |  ℹ Info
-```
 
-Puedes usar los algoritmos de dos formas:
-- **Desde el panel**: clic en "Abrir y ejecutar" en cada pestaña
-- **Desde Processing Toolbox**: `GEE GPR Phenology` → selecciona el algoritmo
+### Output content
+
+| Folder | Content |
+|---|---|
+| `01_S2_raw` | downloaded or copied Sentinel-2 BOA scenes |
+| `02_*_pred` | biophysical variable estimated by spectral GPR |
+| `03_*_gapfilled` | temporally completed GPR series |
+| `04_*_LSP` | phenological metrics raster |
+| `05_reportes_pdf` | PDF reports and CSV summaries |
 
 ---
 
-## 📐 Algoritmos
+## 🎨 Symbology and palettes
 
-### 🌿 Algoritmo 1 — Predicción Espectral GPR
+One of the improvements of the latest versions is the use of **automatic QGIS symbology** based on the original **JavaScript visualization palettes**.
 
-**Archivo:** `algo_spectral_prediction.py`  
-**Equivalente:** Script 3 `GPRPredictedMean` de GEEGPRPhenoDemos
+### Current visual behavior
 
-Aplica un modelo GPR pre-entrenado sobre las 10 bandas Sentinel-2 BOA para estimar variables biofísicas pixel a pixel.
+- raw Sentinel-2 images can be displayed in **RGB natural color**
+- GPR outputs use variable-specific palettes
+- LSP layers use phenology-oriented palettes
+- generated PDF maps reuse the same visualization logic
 
-**Matemática del kernel RBF espectral:**
+### Palette source
 
-```
-k(x, x') = σ² · exp(-0.5 · Σ (xᵢ - x'ᵢ)² / ℓᵢ²)
+The QGIS palettes were adapted from the original `.js` files, especially:
 
-predicción = k* · α + μ
-```
+- `visualization.js`
+- `LSPGeneration.js`
 
-Donde `α` son los coeficientes pre-calculados sobre el conjunto de entrenamiento y `μ` es el valor medio del modelo.
+and centralized into:
 
-**Entradas:**
-
-| Parámetro | Descripción |
-|-----------|-------------|
-| Ráster S2 BOA | Imagen con mínimo 10 bandas |
-| Variable biofísica | LAI, Cab, Cw, Cm, FVC, laiCab, laiCm, laiCw |
-| Bandas B2–B12 | Número de banda para cada longitud de onda |
-| Factor de escala | 10000 para S2 L2A estándar |
-| Máscara de nubes | Ráster binario opcional (1=válido, 0=nube) |
-
-**Salida:** Ráster GeoTIFF float32 con la variable estimada
+- `gee_palettes.py`
 
 ---
 
-### 🔁 Algoritmo 2 — Gapfilling Temporal GPR
+## 🌐 Multilingual interface
 
-**Archivo:** `algo_gapfilling.py`  
-**Equivalente:** Script 2 `GPRGapfilling` de GEEGPRPhenoDemos
+The plugin supports three languages:
 
-Rellena lagunas temporales en la serie del índice biofísico causadas por cobertura nubosa, usando GPR con kernel RBF temporal.
+- **English** (default)
+- **Spanish**
+- **Portuguese**
 
-**Kernel RBF temporal:**
+The active language affects:
 
-```
-K(tᵢ, tⱼ) = σ²_f · exp(-0.5 / ℓ²_ts · (tᵢ - tⱼ)²)
+- the plugin interface
+- visible labels and tool text
+- report text in generated PDF files
+- some status and feedback messages
 
-predicción(t*) = k*ᵀ · (K + σ²_n I)⁻¹ · y
-```
-
-Los hiperparámetros `(ℓ²_ts, σ²_f, σ²_n)` están **pre-calibrados por tipo de cultivo** para 10 especies (maíz, trigo, cebada, girasol, colza, guisante, alfalfa, remolacha, patata, media).
-
-**Entradas:**
-
-| Parámetro | Descripción |
-|-----------|-------------|
-| Carpeta de rásters | Archivos con formato `YYYY-MM-DD.tif` |
-| Fecha objetivo | Fecha a interpolar/rellenar |
-| Ventana temporal | ±días alrededor de la fecha objetivo |
-| Variable biofísica | Para seleccionar el modelo correcto |
-| Tipo de cultivo | Para los hiperparámetros GPR |
-
-**Salida:** Ráster GeoTIFF float32 gapfilled para la fecha objetivo
+> Default language is **English**, but users can switch languages from the plugin menu.
 
 ---
 
-### 📈 Algoritmo 3 — Métricas LSP (Fenología)
+## 📦 Installation
 
-**Archivo:** `algo_lsp.py`  
-**Equivalente:** Scripts 4 y 5 `LSPGeneration` + `PhenologyFunctions`
+### Option A — Manual ZIP installation in QGIS
 
-Ajusta una **doble logística** pixel a pixel sobre la serie temporal gapfilled para extraer métricas de fenología de temporada de cultivo.
+1. Open **QGIS**.
+2. Go to **Plugins → Manage and Install Plugins → Install from ZIP**.
+3. Select the plugin ZIP package.
+4. Enable the plugin.
 
-**Función doble logística:**
+### Option B — Install from source
 
-```
-y(t) = vmin + vamp · [1/(1+exp(-m₁(t-n₁))) - 1/(1+exp(-m₂(t-n₂)))]
-```
+Clone the repository and copy the plugin folder into your QGIS plugins directory.
 
-**Métricas extraídas (12 bandas de salida):**
-
-| Banda | Métrica | Descripción |
-|-------|---------|-------------|
-| 1 | **SOS** | Start of Season — inicio de temporada (DOY) |
-| 2 | **EOS** | End of Season — fin de temporada (DOY) |
-| 3 | **POS** | Peak of Season — máximo de la curva (DOY) |
-| 4 | **LOS** | Length of Season — duración en días |
-| 5 | **customSOS** | SOS con umbral relativo personalizado |
-| 6 | **customEOS** | EOS con umbral relativo personalizado |
-| 7 | **vmin** | Valor mínimo de la curva |
-| 8 | **vmax** | Valor máximo de la curva |
-| 9 | **n₁** | Parámetro de inflexión fase ascendente |
-| 10 | **m₁** | Pendiente de la fase ascendente |
-| 11 | **n₂** | Parámetro de inflexión fase descendente |
-| 12 | **m₂** | Pendiente de la fase descendente |
-
-**Requisito mínimo:** 6 imágenes en la serie temporal para ajustar la función.
-
----
-
-## 🌍 Pipeline GEE Automático
-
-**Archivo:** `algo_gee_pipeline.py`  
-**Algoritmo 4** — Integra todos los pasos anteriores con descarga directa de Sentinel-2 desde Google Earth Engine.
-
-### Flujo completo
-
-```
-AOI (capa QGIS) + Fechas cultivo + % Nubosidad
-           ↓
-[GEE] Filtrar S2 L2A COPERNICUS/S2_SR_HARMONIZED
-           ↓ (máscara SCL)
-[GEE] Descargar bandas B2–B12 (escala 10m, EPSG:4326)
-           ↓
-[GPR] Predicción espectral pixel a pixel
-           ↓
-[GPR] Gapfilling temporal ±ventana días
-           ↓ (opcional)
-[LSP] Doble logística → SOS, EOS, POS, LOS...
-           ↓
-Carpetas de salida GeoTIFF
-```
-
-### Parámetros
-
-| Parámetro | Descripción |
-|-----------|-------------|
-| **Área de interés** | Capa vectorial del proyecto QGIS (dibujada o cargada) |
-| **Fecha inicio cultivo** | `YYYY-MM-DD` — inicio de la temporada |
-| **Fecha fin cultivo** | `YYYY-MM-DD` — fin de la temporada |
-| **Nubosidad máxima** | Filtro CLOUDY_PIXEL_PERCENTAGE (0–100%) |
-| **Variable biofísica** | LAI, Cab, Cw, Cm, FVC, laiCab, laiCm, laiCw |
-| **Tipo de cultivo** | Para hiperparámetros GPR del gapfilling |
-| **Ventana gapfilling** | ±días alrededor de cada fecha (default: 30) |
-| **Umbral SOS/EOS** | Umbral relativo personalizado (0.0–1.0) |
-| **Calcular LSP** | Activar/desactivar métricas fenológicas |
-| **ID proyecto GEE** | Proyecto GEE (opcional, ej: `ee-miusuario`) |
-| **Clave Service Account** | JSON para autenticación automatizada (opcional) |
-
-### Carpetas de salida generadas
-
-```
-carpeta_salida/
-├── 01_S2_raw/          → Imágenes S2 descargadas (YYYY-MM-DD_S2.tif)
-├── 02_LAI_pred/        → Predicción GPR por fecha
-├── 03_LAI_gapfilled/   → Serie gapfilled
-└── 04_LAI_LSP/         → LSP_LAI.tif (12 bandas)
-```
-
-### Autenticación GEE
-
-#### Opción 1 — Desde el menú del plugin (recomendado)
-```
-Complementos → GEE GPR Phenology → Autenticar Google Earth Engine
-```
-
-#### Opción 2 — Desde terminal
 ```bash
-# Instalar API
-pip install earthengine-api
-
-# Autenticar (abre el navegador)
-earthengine authenticate
+git clone https://github.com/your-user/GEE_GPR_Phenology.git
 ```
 
-#### Opción 3 — Desde Consola Python de QGIS
-```python
-import ee
-ee.Authenticate(auth_mode='notebook')
-ee.Initialize()
+Then copy the `GEEGPRPheno` folder to:
+
+| Platform | QGIS plugin folder |
+|---|---|
+| Windows | `C:\Users\<user>\AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins\` |
+| Linux | `~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/` |
+| macOS | `~/Library/Application Support/QGIS/QGIS3/profiles/default/python/plugins/` |
+
+---
+
+## 🧰 Python dependencies
+
+Main dependencies include:
+
+```text
+numpy
+rasterio
+earthengine-api   (only required for the GEE workflow)
 ```
 
----
-
-## 📁 Modelos GPR pre-entrenados
-
-Los modelos están almacenados en `s2boa_models.py` como diccionarios NumPy. Cada modelo contiene:
-
-| Componente | Descripción |
-|------------|-------------|
-| `Xtrain` | Conjunto de entrenamiento normalizado |
-| `alpha_coefficients` | Coeficientes GPR pre-calculados |
-| `mx`, `sx` | Media y desviación para normalización de bandas |
-| `meanmodel` | Media del modelo (offset) |
-| `hypell` | Longitudes de escala por banda |
-| `hypsig` | Amplitud del kernel |
-| `XDXprecalc` | Producto pre-calculado para eficiencia |
-| `gf_hyperparams` | Hiperparámetros de gapfilling por cultivo |
-
-Los modelos fueron entrenados sobre el dataset **ALEBD** (Salinero-Delgado et al.) con muestras del sensor Sentinel-2 en condiciones BOA (Bottom-Of-Atmosphere).
+Depending on the environment, additional standard scientific or plotting dependencies may be used for reports.
 
 ---
 
-## 🔧 Desarrollo y contribuciones
+## 🚀 Quick start
 
-### Estructura de clases principales
+### Typical use in QGIS
 
-```python
-GEEGPRPhenoPlugin          # plugin.py — clase principal QGIS
-└── GEEPanelDialog         # Ventana flotante con pestañas
+1. Open the plugin panel.
+2. Draw or select your AOI.
+3. Choose **GEE Automatic Pipeline**.
+4. Set:
+   - start date
+   - end date
+   - cloud threshold
+   - variable
+   - crop type
+   - LSP on/off
+5. Run the algorithm.
+6. Visualize the grouped outputs in QGIS.
+7. Review the generated PDF reports.
 
-GEEGPRPhenoProvider        # processing_provider.py — proveedor Processing
-├── GPRSpectralPredictionAlgorithm   # Algoritmo 1
-├── GPRGapfillingAlgorithm           # Algoritmo 2
-├── LSPGenerationAlgorithm           # Algoritmo 3
-└── GEEAutoPipelineAlgorithm         # Algoritmo 4
+---
+
+## 🔐 Google Earth Engine authentication
+
+The plugin supports GEE authentication and project switching.
+
+### Recommended workflow
+
+- authenticate once from the plugin menu
+- select or update the GEE project
+- rerun the pipeline
+
+### Also supported
+
+- service account JSON credentials
+- saved Earth Engine credentials
+- local-only mode without GEE
+
+---
+
+## 🖥️ User interface overview
+
+The plugin was designed to keep the workflow accessible to users who prefer a GUI rather than writing scripts manually.
+
+### Main UI concepts
+
+- floating panel
+- algorithm tabs
+- processing integration
+- AOI drawing tool
+- dependency installation helper
+- multilingual selection
+
+<details>
+<summary><strong>Suggested screenshot captions for the README</strong></summary>
+
+- **Figure 1.** Main plugin panel with algorithm tabs.  
+- **Figure 2.** AOI polygon drawing directly on the QGIS canvas.  
+- **Figure 3.** Automatic grouping of output layers in the QGIS Layer Panel.  
+- **Figure 4.** Example PDF report page showing temporal series and summary maps.  
+- **Figure 5.** Example LSP metric atlas generated by the plugin.
+
+</details>
+
+---
+
+## 📊 Generated reports
+
+The plugin can generate publication-friendly report files directly from the analysis.
+
+### PDF outputs
+
+- summary report of the selected variable
+- temporal series plots
+- summary raster maps
+- LSP atlas report
+
+### CSV outputs
+
+- date-wise summary table
+- valid pixel counts
+- mean
+- median
+- standard deviation
+- quartiles
+- min / max
+
+---
+
+## 🛠️ Development history and major fixes
+
+This QGIS plugin was not produced in a single step. It was improved iteratively to solve real-world issues encountered during testing.
+
+### Main milestones
+
+- **v1.1.x** — initial integration and alternative local S2 input
+- **v1.2.x** — mathematical validation against the original JavaScript workflow
+- **v1.3.x** — stability fixes, AOI drawing tool, QA60 logic correction
+- **v1.4.0** — better loading of outputs in QGIS and PDF reporting
+- **v1.5.0** — multilingual support, grouped outputs, improved LSP robustness
+- **v1.5.1** — English as default language and multilingual PDF text
+- **v1.5.2** — original JavaScript-based palettes for QGIS layers and PDF visualization
+
+---
+
+## 🧪 Validation philosophy
+
+Special effort was made to ensure that the QGIS implementation remained faithful to the original methodology.
+
+### Validation areas
+
+- equivalence of spectral GPR logic
+- temporal GPR gapfilling consistency
+- stable handling of Sentinel-2 cloud masking
+- robustness of raster stacking for LSP
+- correct handling of multilingual visible text
+- consistency of visualization palettes with original `.js` files
+
+---
+
+## ⚠️ Troubleshooting
+
+### Common issues
+
+#### 1. Earth Engine dependency loop
+Use the controlled dependency installation workflow instead of attempting installation automatically on every startup.
+
+#### 2. QA60 not found
+Some Sentinel-2 assets may not expose `QA60`. The plugin now falls back safely to `SCL`-based masking.
+
+#### 3. LSP stack shape mismatch
+Older runs could mix rasters with slightly different dimensions. Newer versions clean or harmonize rasters before stacking.
+
+#### 4. Plugin opens too aggressively
+This behavior was fixed. The plugin should not auto-open invasively at QGIS startup.
+
+---
+
+## 🧭 Roadmap
+
+Possible future developments include:
+
+- Julia-backed extensions for advanced numerical modules
+- more report templates
+- richer QGIS style presets
+- official plugin repository packaging
+- automated tests and CI/CD
+- more crop-specific calibration options
+- improved batch processing tools
+
+---
+
+## 🤝 Acknowledgements
+
+This work builds on the original remote sensing methodology and demonstration workflows developed by **Salinero-Delgado et al.** in Google Earth Engine.
+
+It was later adapted, validated, and expanded into a QGIS plugin environment with a strong focus on:
+
+- usability
+- reproducibility
+- mathematical consistency
+- desktop GIS integration
+
+---
+
+## 📄 Citation
+
+If you use this plugin in research, technical reports, or teaching, please cite both the plugin and the original methodology.
+
+### Suggested citation for the plugin
+
+```text
+Flores Riera, J. E., and collaborators. GEE GPR Phenology for QGIS: a plugin for Sentinel-2 biophysical retrieval, temporal gapfilling, and land surface phenology analysis. Version 1.5.2.
 ```
 
-### Agregar un nuevo algoritmo
+### Original methodological basis
 
-1. Crea `algo_nuevo.py` heredando de `QgsProcessingAlgorithm`
-2. Impleméntalo en `processing_provider.py`:
-   ```python
-   from .algo_nuevo import NuevoAlgoritmo
-   self.addAlgorithm(NuevoAlgoritmo())
-   ```
-3. Agrega una pestaña en `plugin.py` → método `_build_ui()`
-
-### Tests
-
-```bash
-# Verificar sintaxis de todos los archivos
-python3 -m py_compile *.py
-
-# Verificar imports (requiere QGIS en el PATH)
-python3 -c "from gpr_algorithms import gpr_spectral_prediction; print('OK')"
+```text
+Salinero-Delgado, M., et al. GEE GPR Phenology demos and associated methodology for Sentinel-2 time-series analysis.
 ```
 
----
-
-## 📚 Referencias
-
-Este plugin implementa la metodología de:
-
-> **M. Salinero-Delgado et al.** — *Monitoring Biophysical Variables from Sentinel-2 Time Series using Gaussian Process Regression*  
-> Repositorio original: [GEEGPRPhenoDemos](https://github.com/msalinero/GEEGPRPhenoDemos)
-
-Para la teoría de GPR aplicada a teledetección:
-
-- Rasmussen & Williams (2006) — *Gaussian Processes for Machine Learning*
-- Camps-Valls et al. — *Kernel Methods for Remote Sensing Data Analysis*
+> Replace the citation text above with the final formal bibliographic reference you prefer for the repository.
 
 ---
 
-## 📬 Contacto
+## 👨‍💻 Authors and contact
 
-<table>
-<tr>
-<td><b>Desarrollador</b></td>
-<td>Jesús Enrique Flores Riera</td>
-</tr>
-<tr>
-<td><b>Institución</b></td>
-<td>Laboratorio 227 — Universidad Nacional de Colombia</td>
-</tr>
-<tr>
-<td><b>Correo</b></td>
-<td><a href="mailto:jfloresr@unal.edu.co">jfloresr@unal.edu.co</a></td>
-</tr>
-<tr>
-<td><b>LinkedIn</b></td>
-<td><a href="https://www.linkedin.com/in/flores-riera/">linkedin.com/in/flores-riera</a></td>
-</tr>
-<tr>
-<td><b>Repositorio</b></td>
-<td><a href="https://github.com/jf-floresriera/GEE_GPR_Phenology">github.com/jf-floresriera/GEE_GPR_Phenology</a></td>
-</tr>
-</table>
+**Primary plugin adaptation and development**  
+Jesús Enrique Flores Riera  
+Laboratorio 227 — Universidad Nacional de Colombia  
+
+**Project support / scientific and technical improvement workflow**  
+Collaborative iterative development for robust QGIS deployment, model validation, visualization, and multilingual support.
 
 ---
 
-## 📄 Licencia
+## 📜 License
 
-Este proyecto está bajo la licencia **MIT**. Ver el archivo [LICENSE](LICENSE) para más detalles.
+This repository can be distributed under the **MIT License** unless you decide to use another final license.
+
+Add a `LICENSE` file at the root of the repository.
 
 ---
+
+## ⭐ Final note
+
+If this plugin is useful for your research or technical work:
+
+- give the repository a **star** ⭐
+- cite it in your publications
+- open issues for bugs or feature requests
+- share screenshots, examples, and use cases
 
 <div align="center">
 
-Desarrollado con ❤ en el **Laboratorio 227 — Universidad Nacional de Colombia**  
-**Jesús Enrique Flores Riera** · 2025–2026
+**Made for robust crop monitoring workflows in QGIS** 🌾🛰️📈
 
 </div>
