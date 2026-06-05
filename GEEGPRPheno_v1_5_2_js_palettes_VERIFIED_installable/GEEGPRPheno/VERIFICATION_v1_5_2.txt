@@ -1,0 +1,31 @@
+GEEGPRPheno v1.5.2 package verification
+Result: COMPILE_OK
+v1.5.1 source files excluding __pycache__: 18
+v1.5.2 source files excluding __pycache__: 20
+Missing from v1.5.2 compared with v1.5.1 sources: []
+Added in v1.5.2: ['GEEGPRPheno/CHANGELOG_v1_5_2.md', 'GEEGPRPheno/gee_palettes.py']
+
+Reason for smaller ZIP:
+v1.5.1 included __pycache__/*.pyc files, which are not needed for QGIS installation. v1.5.2 intentionally excludes __pycache__; QGIS/Python regenerates those files automatically.
+
+Files in v1.5.2:
+ - GEEGPRPheno/CHANGELOG_v1_5_1.md
+ - GEEGPRPheno/CHANGELOG_v1_5_2.md
+ - GEEGPRPheno/INSTALACION_DEPENDENCIAS_WINDOWS.txt
+ - GEEGPRPheno/__init__.py
+ - GEEGPRPheno/algo_gapfilling.py
+ - GEEGPRPheno/algo_gee_pipeline.py
+ - GEEGPRPheno/algo_lsp.py
+ - GEEGPRPheno/algo_spectral_prediction.py
+ - GEEGPRPheno/gee_palettes.py
+ - GEEGPRPheno/gpr_algorithms.py
+ - GEEGPRPheno/i18n.py
+ - GEEGPRPheno/icon.png
+ - GEEGPRPheno/icon.svg
+ - GEEGPRPheno/installer.py
+ - GEEGPRPheno/metadata.txt
+ - GEEGPRPheno/plugin.py
+ - GEEGPRPheno/processing_provider.py
+ - GEEGPRPheno/qgis_utils.py
+ - GEEGPRPheno/requirements.txt
+ - GEEGPRPheno/s2boa_models.py

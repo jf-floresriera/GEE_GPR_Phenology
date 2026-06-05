@@ -1,0 +1,36 @@
+GEEGPRPheno v1.5.0 — instalación segura de dependencias en Windows, macOS y Linux/QGIS
+======================================================================================
+
+Esta versión NO instala dependencias al arrancar QGIS. Esto evita bucles de carga y reinicios.
+
+Instalación automática controlada desde QGIS
+-------------------------------------------
+1. Abre QGIS.
+2. Ve a Plugins > GEE GPR Phenology > Instalar/actualizar dependencias Python.
+3. Confirma la instalación.
+4. Espera a que termine pip.
+5. Cierra y vuelve a abrir QGIS.
+
+La instalación usa el Python asociado a QGIS cuando es posible.
+
+Instalación manual alternativa
+------------------------------
+Windows / OSGeo4W Shell:
+    python -m pip install --upgrade pip
+    python -m pip install --upgrade earthengine-api rasterio
+
+macOS / Terminal:
+    /Applications/QGIS.app/Contents/MacOS/bin/python3 -m pip install --upgrade earthengine-api rasterio
+
+Linux:
+    python3 -m pip install --user --upgrade earthengine-api rasterio
+
+Si Linux rechaza pip por PEP 668:
+    python3 -m pip install --user --upgrade --break-system-packages earthengine-api rasterio
+
+Notas importantes
+-----------------
+- earthengine-api solo se requiere para descargar desde Google Earth Engine.
+- rasterio se requiere para leer/escribir GeoTIFF locales.
+- Si se usa la fuente 'Carpeta local S2 BOA', no es obligatorio autenticar GEE.
+- Si la instalación automática falla, revisar el log: ~/GEEGPRPheno_dependency_install.log
