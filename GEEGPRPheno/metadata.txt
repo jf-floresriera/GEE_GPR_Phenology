@@ -1,16 +1,19 @@
 [general]
 name=GEE GPR Phenology
 qgisMinimumVersion=3.16
-description=Plugin para estimación de variables biofísicas vegetales con GPR y generación de métricas fenológicas LSP desde imágenes Sentinel-2 BOA. Basado en GEEGPRPhenoDemos de M. Salinero (msalinero85).
-version=1.0.0
-author=Adaptado para QGIS por Jesus Enrique Flores Riera
-email=jesus.flores@unal.edu.co
-about=Implementa el pipeline completo: predicción GPR espectral pixel a pixel, gapfilling temporal con kernel RBF, ajuste de doble logística y generación de métricas LSP (SOS, EOS, POS, LOS) para series Sentinel-2.
-tracker=https://github.com/jf-floresriera/GEE_GPR_Phenology
+qgisMaximumVersion=3.99
+description=A QGIS plugin for Sentinel-2 BOA/L2A biophysical variable retrieval, temporal gap filling, and land surface phenology analysis using Gaussian Process Regression.
+version=1.5.7
+author=Jesus Enrique Flores Riera
+email=[jesus.flores@unal.edu.co](mailto:jesus.flores@unal.edu.co)
+about=GEE GPR Phenology is a Python/QGIS implementation for Sentinel-2 BOA/L2A biophysical variable retrieval, temporal gap filling, and land surface phenology analysis. The plugin was developed for the QGIS Processing framework from the ideas and mathematical workflow of a previous Google Earth Engine JavaScript methodology, adding QGIS integration, local GeoTIFF workflows, automatic layer loading, QGIS symbology, PDF/CSV reporting, multilingual support, and repository-ready packaging.
+homepage=https://jf-floresriera.github.io/GEE_GPR_Phenology/
+tracker=https://github.com/jf-floresriera/GEE_GPR_Phenology/issues
 repository=https://github.com/jf-floresriera/GEE_GPR_Phenology
 hasProcessingProvider=yes
-tags=remote sensing,sentinel-2,GPR,phenology,biophysical,LAI,vegetation,time series,gapfilling
+tags=remote sensing, sentinel-2, gpr, phenology, biophysical, lai, vegetation, time series, gap filling, land surface phenology
 category=Raster
 icon=icon.png
 experimental=False
 deprecated=False
+changelog=1.5.7 - Updates public metadata links for homepage, issue tracking and source code repository. Refines authorship wording to describe the plugin as a Python/QGIS implementation based on a previous Google Earth Engine JavaScript methodology. 1.5.6 - Adds explicit deprecated=False metadata and automatic Flake8 style cleanup for QGIS Plugin Repository scan. 1.5.5 - Metadata normalization for QGIS Plugin Repository upload. Keeps security fixes, optimized lightweight icon, HTTPS Google endpoint validation, and non secret-like parameter names. 1.5.4 - New upload version with optimized icon. 1.5.3 - Security fix for QGIS Plugin Repository. 1.5.2 - Public QGIS submission package.
