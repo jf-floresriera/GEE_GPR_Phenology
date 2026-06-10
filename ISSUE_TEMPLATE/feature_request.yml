@@ -1,0 +1,43 @@
+name: Feature request
+description: Suggest an improvement for the GEE GPR Phenology QGIS plugin
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting an improvement. Please describe the use case clearly.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this feature solve?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Plugin area
+      options:
+        - User interface
+        - Google Earth Engine workflow
+        - Local Sentinel-2 workflow
+        - Spectral GPR prediction
+        - Gap filling
+        - LSP metrics
+        - Reports and exports
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+    validations:
+      required: false
