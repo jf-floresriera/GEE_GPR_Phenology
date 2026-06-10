@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GEE GPR Phenology for QGIS</title>
+  <meta name="description" content="QGIS plugin for Sentinel-2 biophysical variable retrieval, temporal gap filling, and land surface phenology analysis using Gaussian Process Regression.">
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+  <header class="hero">
+    <nav class="nav">
+      <div class="brand">GEE GPR Phenology</div>
+      <div class="links">
+        <a href="#features">Features</a>
+        <a href="#workflow">Workflow</a>
+        <a href="support.html">Support</a>
+        <a href="https://github.com/jf-floresriera/GEE_GPR_Phenology">GitHub</a>
+      </div>
+    </nav>
+    <section class="hero-grid">
+      <div>
+        <p class="eyebrow">QGIS · Sentinel-2 · GPR · Land Surface Phenology</p>
+        <h1>Sentinel-2 biophysical retrieval, gap filling, and phenology analysis inside QGIS.</h1>
+        <p class="lead">GEE GPR Phenology is a QGIS plugin that implements a complete workflow for Sentinel-2 BOA/L2A imagery, Gaussian Process Regression prediction, temporal gap filling, double-logistic fitting, and land surface phenology metrics.</p>
+        <div class="buttons">
+          <a class="btn primary" href="https://plugins.qgis.org/plugins/GEEGPRPheno/">QGIS Plugin page</a>
+          <a class="btn" href="https://github.com/jf-floresriera/GEE_GPR_Phenology/issues">Report an issue</a>
+        </div>
+      </div>
+      <div class="card hero-card">
+        <h2>Core outputs</h2>
+        <ul>
+          <li>Biophysical variable rasters from Sentinel-2 reflectance</li>
+          <li>Temporally gap-filled image series</li>
+          <li>LSP metrics: SOS, EOS, POS, LOS and related parameters</li>
+          <li>PDF and CSV reports for reproducible outputs</li>
+        </ul>
+      </div>
+    </section>
+  </header>
+
+  <main>
+    <section id="features" class="section">
+      <h2>Main features</h2>
+      <div class="cards">
+        <article class="card"><h3>Spectral GPR prediction</h3><p>Estimates crop biophysical variables pixel by pixel from Sentinel-2 BOA/L2A reflectance using Gaussian Process Regression.</p></article>
+        <article class="card"><h3>Temporal gap filling</h3><p>Uses an RBF kernel to complete missing or cloudy observations and build consistent temporal raster series.</p></article>
+        <article class="card"><h3>Phenology metrics</h3><p>Fits double-logistic curves and derives land surface phenology metrics such as start, end, peak and length of season.</p></article>
+        <article class="card"><h3>QGIS integration</h3><p>Automatically loads outputs into QGIS with organized layer groups, symbology, and PDF/CSV reporting.</p></article>
+      </div>
+    </section>
+
+    <section id="workflow" class="section split">
+      <div>
+        <h2>Recommended workflow</h2>
+        <ol>
+          <li>Define or draw an AOI in QGIS.</li>
+          <li>Select Google Earth Engine or local Sentinel-2 BOA GeoTIFF input.</li>
+          <li>Run spectral GPR prediction for the selected biophysical variable.</li>
+          <li>Apply temporal gap filling to obtain a continuous time series.</li>
+          <li>Generate LSP metrics and export maps, CSV summaries, and PDF reports.</li>
+        </ol>
+      </div>
+      <div class="card note">
+        <h3>Scientific basis and attribution</h3>
+        <p>This plugin is a Python/QGIS implementation developed from the ideas, mathematical workflow, and visualization logic of a previous Google Earth Engine JavaScript methodology. It is not only a literal adaptation: it includes QGIS Processing integration, multilingual support, reporting, local GeoTIFF workflows, metadata/security fixes, and repository-ready packaging.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Support and issue tracking</h2>
+      <p>For reproducibility, please include QGIS version, plugin version, operating system, input data type, processing log, and screenshots when reporting an issue.</p>
+      <div class="buttons">
+        <a class="btn primary" href="support.html">How to report errors</a>
+        <a class="btn" href="https://github.com/jf-floresriera/GEE_GPR_Phenology/issues/new?template=bug_report.yml">Open a bug report</a>
+        <a class="btn" href="https://github.com/jf-floresriera/GEE_GPR_Phenology/issues/new?template=feature_request.yml">Request a feature</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Developed for QGIS/Python by Jesus Enrique Flores Riera. Based on a previous Google Earth Engine JavaScript methodology.</p>
+  </footer>
+</body>
+</html>
