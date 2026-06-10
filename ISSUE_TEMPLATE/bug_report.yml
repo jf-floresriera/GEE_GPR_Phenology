@@ -1,0 +1,79 @@
+name: Bug report
+description: Report an error in the GEE GPR Phenology QGIS plugin
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping improve GEE GPR Phenology. Please provide enough information to reproduce the problem.
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      placeholder: "Example: 1.5.6"
+    validations:
+      required: true
+  - type: input
+    id: qgis-version
+    attributes:
+      label: QGIS version
+      placeholder: "Example: QGIS 3.40.1 Bratislava"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: workflow
+    attributes:
+      label: Data source / workflow
+      options:
+        - Google Earth Engine workflow
+        - Local Sentinel-2 BOA GeoTIFF workflow
+        - Spectral GPR prediction
+        - Temporal gap filling
+        - LSP metrics
+        - PDF/CSV reports
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the error and what you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open QGIS...
+        2. Run algorithm...
+        3. Select...
+        4. Error appears...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: QGIS Processing log or traceback
+      render: text
+    validations:
+      required: false
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or additional context
+    validations:
+      required: false
