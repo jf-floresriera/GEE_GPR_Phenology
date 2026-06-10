@@ -1,0 +1,20 @@
+[general]
+name=GEE GPR Phenology
+qgisMinimumVersion=3.16
+qgisMaximumVersion=3.99
+description=A QGIS plugin for Sentinel-2 BOA/L2A biophysical variable retrieval, temporal gap filling, and land surface phenology analysis using Gaussian Process Regression.
+version=1.5.7
+author=Jesus Enrique Flores Riera
+email=jesus.flores@unal.edu.co
+about=GEE GPR Phenology is a Python/QGIS implementation for Sentinel-2 BOA/L2A biophysical variable retrieval, temporal gap filling, and land surface phenology analysis. The plugin was developed for the QGIS Processing framework from the ideas and mathematical workflow of a previous Google Earth Engine JavaScript methodology, adding QGIS integration, local GeoTIFF workflows, automatic layer loading, QGIS symbology, PDF/CSV reporting, multilingual support, and repository-ready packaging.
+homepage=https://jf-floresriera.github.io/GEE_GPR_Phenology/
+tracker=https://github.com/jf-floresriera/GEE_GPR_Phenology/issues
+repository=https://github.com/jf-floresriera/GEE_GPR_Phenology
+license=MIT
+hasProcessingProvider=True
+tags=remote sensing,sentinel-2,gpr,phenology,biophysical,lai,vegetation,time series,gap filling,land surface phenology
+category=Raster
+icon=icon.png
+experimental=False
+deprecated=False
+changelog=1.5.7 - Updates public metadata links for homepage, issue tracking and source code repository. Refines authorship wording to describe the plugin as a Python/QGIS implementation based on a previous Google Earth Engine JavaScript methodology. Keeps Flake8 style cleanup and explicit deprecated=False metadata for QGIS Plugin Repository review. 1.5.6 - Adds explicit deprecated=False metadata and automatic Flake8 style cleanup for QGIS Plugin Repository scan. 1.5.5 - Metadata normalization for QGIS Plugin Repository upload. Keeps security fixes, optimized lightweight icon, HTTPS Google endpoint validation, and non secret-like parameter names. 1.5.4 - New upload version with optimized icon. 1.5.3 - Security fix for QGIS Plugin Repository. 1.5.2 - Public QGIS submission package.

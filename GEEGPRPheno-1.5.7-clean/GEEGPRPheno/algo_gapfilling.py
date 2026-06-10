@@ -1,0 +1,228 @@
+# -*- coding: utf-8 -*-
+"""
+Algoritmo 2 QGIS: Relleno temporal de series GPR (Gapfilling).
+Equivalente al Script 2 (GPRGapfilling) del repositorio GEEGPRPhenoDemos.
+"""
+import os
+import glob
+import numpy as np
+from datetime import datetime
+from qgis.core import (
+    QgsProcessingAlgorithm, QgsProcessingParameterFile,
+    QgsProcessingParameterString, QgsProcessingParameterEnum,
+    QgsProcessingParameterNumber, QgsProcessingParameterBoolean,
+    QgsProcessingParameterRasterDestination,
+    QgsProcessingException,
+)
+from qgis.PyQt.QtCore import QCoreApplication
+from .i18n import tr as _tr
+
+
+class GPRGapfillingAlgorithm(QgsProcessingAlgorithm):
+
+    INPUT_FOLDER = 'INPUT_FOLDER'
+    TARGET_DATE = 'TARGET_DATE'
+    TIME_WINDOW = 'TIME_WINDOW'
+    VEG_INDEX = 'VEG_INDEX'
+    CROP_TYPE = 'CROP_TYPE'
+    OUTPUT = 'OUTPUT'
+    ADD_TO_QGIS = 'ADD_TO_QGIS'
+
+    VEG_INDEX_OPTIONS = ['LAI', 'Cab', 'Cw', 'Cm', 'FVC', 'laiCab', 'laiCm', 'laiCw']
+    CROP_OPTIONS = ['media', 'maiz', 'trigo', 'cebada', 'girasol',
+                    'colza', 'guisante', 'alfalfa', 'remolacha', 'patata']
+
+    def tr(self, s):
+        return _tr(QCoreApplication.translate(self.__class__.__name__, s))
+
+    def createInstance(self):
+        return GPRGapfillingAlgorithm()
+
+    def name(self):
+        return 'gpr_gapfilling'
+
+    def displayName(self):
+        return self.tr('2. Relleno Temporal de Series GPR (Gapfilling)')
+
+    def group(self):
+        return self.tr('GEE GPR Phenology')
+
+    def groupId(self):
+        return 'geegprpheno'
+
+    def shortHelpString(self):
+        return self.tr(
+            '<b>GPR Gapfilling Temporal</b> — Equivalente Script 2 (GPRGapfilling)<br><br>'
+            'Usa GPR con kernel RBF temporal para rellenar lagunas en la serie temporal '
+            'del índice biofísico causadas por nubes.<br><br>'
+            '<b>Formato de archivos:</b> YYYY-MM-DD_*.tif (ej: 2020-04-11_LAI.tif)<br><br>'
+            'Kernel RBF: K(t_i,t_j) = sigfts × exp(-0.5 × ell2ts × (t_i-t_j)²)<br>'
+            'Hiperparámetros pre-calibrados por cultivo e índice biofísico.<br><br>'
+            'Ref: M. Salinero-Delgado et al. — GEEGPRPhenoDemos'
+        )
+
+    def initAlgorithm(self, config=None):
+        self.addParameter(QgsProcessingParameterFile(
+            self.INPUT_FOLDER,
+            self.tr('Carpeta con rásters del índice (YYYY-MM-DD_*.tif)'),
+            behavior=QgsProcessingParameterFile.Folder))
+        self.addParameter(QgsProcessingParameterString(
+            self.TARGET_DATE, self.tr('Fecha objetivo (YYYY-MM-DD)'),
+            defaultValue='2020-04-11'))
+        self.addParameter(QgsProcessingParameterNumber(
+            self.TIME_WINDOW, self.tr('Ventana temporal (±días)'),
+            type=QgsProcessingParameterNumber.Integer,
+            defaultValue=30, minValue=1, maxValue=180))
+        self.addParameter(QgsProcessingParameterEnum(
+            self.VEG_INDEX, self.tr('Variable biofísica'),
+            options=self.VEG_INDEX_OPTIONS, defaultValue=0))
+        self.addParameter(QgsProcessingParameterEnum(
+            self.CROP_TYPE, self.tr('Tipo de cultivo'),
+            options=[self.tr(o) for o in self.CROP_OPTIONS], defaultValue=0))
+        self.addParameter(QgsProcessingParameterBoolean(
+            self.ADD_TO_QGIS, self.tr('Cargar resultado como capa raster en QGIS'),
+            defaultValue=True))
+        self.addParameter(QgsProcessingParameterRasterDestination(
+            self.OUTPUT, self.tr('Ráster de salida — serie gapfilled')))
+
+    def processAlgorithm(self, parameters, context, feedback):
+        import rasterio
+        from rasterio.warp import reproject, Resampling
+        from .s2boa_models import MODELS
+        from .gpr_algorithms import gpr_gapfilling_temporal
+
+        folder = self.parameterAsFile(parameters, self.INPUT_FOLDER, context)
+        target_date = self.parameterAsString(parameters, self.TARGET_DATE, context).strip()
+        time_window = self.parameterAsInt(parameters, self.TIME_WINDOW, context)
+        veg_index = self.VEG_INDEX_OPTIONS[self.parameterAsEnum(parameters, self.VEG_INDEX, context)]
+        crop = self.CROP_OPTIONS[self.parameterAsEnum(parameters, self.CROP_TYPE, context)]
+        output_path = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
+        add_to_qgis = self.parameterAsBool(parameters, self.ADD_TO_QGIS, context)
+
+        model = MODELS[veg_index]
+        feedback.pushInfo(f'Gapfilling: {veg_index} | {crop} | {target_date} ±{time_window}d')
+
+        tif_files = sorted(glob.glob(os.path.join(folder, '*.tif')))
+        if not tif_files:
+            raise QgsProcessingException(f'No hay .tif en: {folder}')
+
+        file_dates = {}
+        for f in tif_files:
+            bn = os.path.basename(f)
+            try:
+                datetime.strptime(bn[:10], '%Y-%m-%d')
+                file_dates[bn[:10]] = f
+            except ValueError:
+                pass
+
+        if not file_dates:
+            raise QgsProcessingException('Ningún archivo con formato YYYY-MM-DD_*.tif encontrado.')
+
+        target_dt = datetime.strptime(target_date, '%Y-%m-%d')
+        obs_dates = {d: f for d, f in file_dates.items()
+                     if abs((datetime.strptime(d, '%Y-%m-%d') - target_dt).days) <= time_window}
+
+        feedback.pushInfo(f'Observaciones en ventana: {len(obs_dates)}')
+        if len(obs_dates) < 2:
+            raise QgsProcessingException(f'Se necesitan ≥2 observaciones. Encontradas: {len(obs_dates)}')
+
+        first_f = list(obs_dates.values())[0]
+        with rasterio.open(first_f) as ref:
+            meta = ref.meta.copy()
+            n_rows, n_cols = ref.height, ref.width
+            nodata = ref.nodata if ref.nodata is not None else -9999.0
+            n_pix = n_rows * n_cols
+            ref_transform = ref.transform
+            ref_crs = ref.crs
+
+        def _read_aligned_band1(fpath):
+            with rasterio.open(fpath) as src:
+                src_nodata = src.nodata if src.nodata is not None else nodata
+                if (src.height == n_rows and src.width == n_cols and  # noqa: W504
+                        src.crs == ref_crs and tuple(src.transform) == tuple(ref_transform)):
+                    return src.read(1).astype(np.float32).flatten()
+                feedback.pushInfo(f'Armonizando grilla: {os.path.basename(fpath)}')
+                arr = np.full((n_rows, n_cols), nodata, dtype=np.float32)
+                reproject(
+                    source=rasterio.band(src, 1),
+                    destination=arr,
+                    src_transform=src.transform,
+                    src_crs=src.crs,
+                    dst_transform=ref_transform,
+                    dst_crs=ref_crs,
+                    src_nodata=src_nodata,
+                    dst_nodata=nodata,
+                    resampling=Resampling.bilinear,
+                )
+            return arr.flatten()
+
+        epoch = datetime(1970, 1, 1)
+        obs_doys_list, obs_vals_list = [], []
+        for date_str, fpath in sorted(obs_dates.items()):
+            dt = datetime.strptime(date_str, '%Y-%m-%d')
+            arr_flat = _read_aligned_band1(fpath)
+            if arr_flat.size != n_pix:
+                feedback.pushWarning(f'Omitido por tamaño incompatible: {os.path.basename(fpath)}')
+                continue
+            obs_doys_list.append(float((dt - epoch).days))
+            obs_vals_list.append(arr_flat)
+            if feedback.isCanceled():
+                return {}
+
+        if len(obs_vals_list) < 2:
+            raise QgsProcessingException(f'Se necesitan ≥2 observaciones válidas tras armonizar. Encontradas: {len(obs_vals_list)}')
+
+        obs_doys = np.array(obs_doys_list)
+        obs_values = np.stack(obs_vals_list, axis=0)
+        target_ep = float((target_dt - epoch).days)
+        pred_flat = np.full(n_pix, nodata, dtype=np.float32)
+
+        feedback.setProgress(40)
+        block = max(10000, n_pix // 10)
+        for start in range(0, n_pix, block):
+            if feedback.isCanceled():
+                return {}
+            end = min(start + block, n_pix)
+            chunk = obs_values[:, start:end]
+            finite_valid = (chunk != nodata) & np.isfinite(chunk)
+            valid_count = finite_valid.sum(axis=0)
+            can_predict = valid_count >= 2
+            if can_predict.any():
+                out = np.full(end - start, nodata, dtype=np.float32)
+
+                # Group pixels that share the same temporal availability pattern.
+                # This is much more robust than the previous all-or-nothing rule and
+                # avoids treating cloudy/nodata dates as zeros.
+                pattern_matrix = finite_valid[:, can_predict].T  # (n_pixels_ok, n_obs)
+                unique_patterns, inverse = np.unique(pattern_matrix, axis=0, return_inverse=True)
+                can_predict_idx = np.where(can_predict)[0]
+
+                for pat_i, pattern in enumerate(unique_patterns):
+                    selected_local = can_predict_idx[inverse == pat_i]
+                    if pattern.sum() < 2:
+                        continue
+                    pred_vals = gpr_gapfilling_temporal(
+                        target_ep,
+                        obs_doys[pattern],
+                        chunk[pattern][:, selected_local],
+                        model,
+                        crop,
+                    )
+                    out[selected_local] = pred_vals.ravel()
+
+                pred_flat[start:end] = out
+            feedback.setProgress(40 + int(50 * end / n_pix))
+
+        out_meta = meta.copy()
+        out_meta.update({'count': 1, 'dtype': 'float32', 'nodata': nodata, 'driver': 'GTiff'})
+        with rasterio.open(output_path, 'w', **out_meta) as dst:
+            dst.write(pred_flat.reshape(n_rows, n_cols), 1)
+            dst.update_tags(1, VEGINDEX=veg_index, TARGET_DATE=target_date, CROP=crop)
+
+        if add_to_qgis:
+            from .qgis_utils import queue_raster_layer
+            queue_raster_layer(context, output_path, f'Gapfilled_{veg_index}_{target_date}', feedback, group_name=self.tr('GEEGPRPheno - Gapfilled'), style_kind='singleband', variable=veg_index)
+
+        feedback.setProgress(100)
+        feedback.pushInfo(f'✅ Gapfilled guardado: {output_path}')
+        return {self.OUTPUT: output_path}
