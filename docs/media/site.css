@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Support · GEE GPR Phenology</title>
+  <meta name="description" content="How to report bugs and request features for the GEE GPR Phenology QGIS plugin.">
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+  <header class="page-header">
+    <nav class="nav">
+      <div class="brand">GEE GPR Phenology</div>
+      <div class="links">
+        <a href="index.html">Home</a>
+        <a href="https://github.com/jf-floresriera/GEE_GPR_Phenology/issues">Issues</a>
+        <a href="https://github.com/jf-floresriera/GEE_GPR_Phenology">Repository</a>
+      </div>
+    </nav>
+    <h1>Support and error tracking</h1>
+    <p class="lead">Use this page before opening a GitHub issue. Complete reports help reproduce and fix errors faster.</p>
+  </header>
+
+  <main>
+    <section class="section split">
+      <div class="card">
+        <h2>Before reporting</h2>
+        <ol>
+          <li>Check that you are using the latest stable plugin version.</li>
+          <li>Restart QGIS and try the workflow again with a small AOI.</li>
+          <li>Confirm that the input Sentinel-2 BOA/L2A files or GEE authentication are valid.</li>
+          <li>Copy the full QGIS Processing log if the error happens during an algorithm run.</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h2>Include in the report</h2>
+        <ul>
+          <li>QGIS version and operating system</li>
+          <li>Plugin version</li>
+          <li>Algorithm used</li>
+          <li>Input data source: GEE or local GeoTIFF</li>
+          <li>Full traceback or processing log</li>
+          <li>Expected result and actual result</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Open an issue</h2>
+      <div class="buttons">
+        <a class="btn primary" href="https://github.com/jf-floresriera/GEE_GPR_Phenology/issues/new?template=bug_report.yml">Report a bug</a>
+        <a class="btn" href="https://github.com/jf-floresriera/GEE_GPR_Phenology/issues/new?template=feature_request.yml">Request a feature</a>
+        <a class="btn" href="https://github.com/jf-floresriera/GEE_GPR_Phenology/issues">View existing issues</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>GEE GPR Phenology · QGIS plugin support</p>
+  </footer>
+</body>
+</html>
